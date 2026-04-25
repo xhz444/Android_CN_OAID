@@ -1,14 +1,15 @@
-# This workflow will build a Java/Android project with Gradle
-# See https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
-# and https://docs.github.com/en/actions/guides/storing-workflow-data-as-artifacts
-
 name: Release APK
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master]
+    branches:
+      - master
+      - main
   pull_request:
-    branches: [master]
+    branches:
+      - master
+      - main
 
 jobs:
   build:
@@ -16,23 +17,41 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: 17
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew clean assembleRelease --info --warning-mode all
+      - name: Show project structure
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 4 -type f | sort | head -300
+
+      - name: Show Gradle tasks
+        run: ./gradlew tasks --all
+
+      - name: Build Release APK
+        run: ./gradlew clean assembleRelease --info --warning-mode all --stacktrace
+
+      - name: Find APK files
+        run: |
+          echo "APK files:"
+          find . -type f -name "*.apk" -print
 
       - name: Store android package
         uses: actions/upload-artifact@v4
         with:
-          name: artifact
-          path: app/build/outputs/apk/pub/release/*.apk
+          name: Android_CN_OAID-release-apk
+          path: |
+            app/build/outputs/apk/pub/release/*.apk
+            app/build/outputs/apk/**/*.apk
+            **/build/outputs/apk/**/*.apk
           if-no-files-found: warn
           retention-days: 7
